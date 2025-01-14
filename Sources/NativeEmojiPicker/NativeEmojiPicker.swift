@@ -24,6 +24,7 @@ public struct EmojiPicker: View {
     @Binding var emoji: String?
     @Binding var genmoji: NSAttributedString?
     @Binding var isPresented: Bool
+    @State var textView = EmojiTextView()
     public init(
         emoji: Binding<String?>,
         genmoji: Binding<NSAttributedString?> = .constant(nil),
@@ -40,10 +41,22 @@ public struct EmojiPicker: View {
     var hasNothing: Bool { emoji == nil && genmoji == nil }
     
     public var body: some View {
-        return Group {
-            EmojiTextViewWrapper($emoji, $genmoji, $isPresented, options).opacity(0)
+        Group {
+            EmojiTextViewWrapper($emoji, $genmoji, $isPresented, $textView, options).opacity(0)
         }
         .frame(height: 0)
+        .onChange(of: isPresented) { isPresented in
+            guard textView != nil else { return }
+            if isPresented {
+                if !textView.isFirstResponder {
+                    textView.becomeFirstResponder()
+                }
+            } else {
+                if textView.isFirstResponder {
+                    textView.resignFirstResponder()
+                }
+            }
+        }
     }
     
     public class Options {
@@ -75,30 +88,23 @@ extension Character {
 struct EmojiTextViewWrapper: UIViewRepresentable {
     @Binding var emoji: String?
     @Binding var genmoji: NSAttributedString?
-    @Binding var isPresented: Bool {
-        didSet {
-            if isPresented {
-                if !textView.isFirstResponder {
-                    textView.becomeFirstResponder()
-                }
-                if options.disableInputModeChange { addInputModeObserver() }
-            } else {
-                if textView.isFirstResponder {
-                    textView.resignFirstResponder()
-                }
-                if options.disableInputModeChange { removeInputModeObserver() }
-            }
-        }
-    }
+    @Binding var isPresented: Bool
+    @Binding var textView: EmojiTextView
     
-    let textView = EmojiTextView()
     let options: EmojiPicker.Options
-
-    init(_ emoji: Binding<String?>, _ genmoji: Binding<NSAttributedString?>, _ isShown: Binding<Bool>, _ options: EmojiPicker.Options) {
+    
+    init(
+        _ emoji: Binding<String?>,
+        _ genmoji: Binding<NSAttributedString?>,
+        _ isShown: Binding<Bool>,
+        _ textView: Binding<EmojiTextView>,
+        _ options: EmojiPicker.Options
+    ) {
         self._emoji = emoji
         self._genmoji = genmoji
         self._isPresented = isShown
         self.options = options
+        self._textView = textView
     }
 
     class TextViewCoordinator: NSObject, UITextViewDelegate {
@@ -147,10 +153,16 @@ struct EmojiTextViewWrapper: UIViewRepresentable {
 
         func textViewDidEndEditing(_ textView: UITextView) {
             parent.isPresented = false
+            if parent.options.disableInputModeChange {
+                parent.removeInputModeObserver()
+            }
         }
 
         func textViewDidBeginEditing(_ textView: UITextView) {
             parent.isPresented = true
+            if parent.options.disableInputModeChange {
+                parent.addInputModeObserver()
+            }
         }
     }
     
