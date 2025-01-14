@@ -24,7 +24,7 @@ public struct EmojiPicker: View {
     @Binding var emoji: String?
     @Binding var genmoji: NSAttributedString?
     @Binding var isPresented: Bool
-    init(
+    public init(
         emoji: Binding<String?>,
         genmoji: Binding<NSAttributedString?> = .constant(nil),
         isPresented: Binding<Bool>,
@@ -36,33 +36,30 @@ public struct EmojiPicker: View {
         self.options = options
     }
     
-    @State var Wrapper: EmojiTextViewWrapper!
     let options: Options
     var hasNothing: Bool { emoji == nil && genmoji == nil }
     
     public var body: some View {
         return Group {
-            if let Wrapper { Wrapper.opacity(0) }
+            EmojiTextViewWrapper($emoji, $genmoji, $isPresented, options).opacity(0)
         }
         .frame(height: 0)
-        .onAppear {
-            if Wrapper == nil {
-                Wrapper = EmojiTextViewWrapper($emoji, $genmoji, $isPresented, options)
-                options.onNonEmoji = { character in
-                    print("non emoji: \(character)")
-                    Wrapper.isPresented = false
-                }
-            }
-        }
     }
     
     public class Options {
         let supportGenmoji: Bool
         let disableInputModeChange: Bool
-        var onNonEmoji: ((String) -> Void)
-        init(supportGenmoji: Bool = true, disableInputModeChange: Bool = false, onNonEmoji: @escaping (String) -> Void = { _ in}) {
+        let onNonEmoji: ((String) -> Void)
+        let shouldCloseOnNonEmoji: Bool
+        public init(
+            supportGenmoji: Bool = true,
+            disableInputModeChange: Bool = false,
+            shouldCloseOnNonEmoji: Bool = true,
+            onNonEmoji: @escaping (String) -> Void = { _ in}
+        ) {
             self.supportGenmoji = supportGenmoji
             self.disableInputModeChange = disableInputModeChange
+            self.shouldCloseOnNonEmoji = shouldCloseOnNonEmoji
             self.onNonEmoji = onNonEmoji
         }
     }
@@ -118,7 +115,12 @@ struct EmojiTextViewWrapper: UIViewRepresentable {
                 updatedText = String(updatedText.suffix(1))
                 if !isToDelete {
                     if updatedText.isEmpty {
-                        defer { parent.options.onNonEmoji(string) }
+                        defer {
+                            parent.options.onNonEmoji(string)
+                            if parent.options.shouldCloseOnNonEmoji {
+                                parent.isPresented = false
+                            }
+                        }
                         updatedText = original.filter((\.isEmoji))
                     } else {
                         textView.resignFirstResponder()

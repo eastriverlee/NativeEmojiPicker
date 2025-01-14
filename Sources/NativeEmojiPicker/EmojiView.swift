@@ -10,7 +10,7 @@ public struct EmojiView: View {
     var emoji: String?
     var genmoji: NSAttributedString?
     
-    init (_ emoji: String?, _ genmoji: NSAttributedString? = nil) {
+    public init (_ emoji: String?, _ genmoji: NSAttributedString? = nil) {
         self.emoji = emoji
         self.genmoji = genmoji
     }
