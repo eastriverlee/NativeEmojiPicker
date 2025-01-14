@@ -16,8 +16,8 @@ public extension View {
     }
 }
 
-struct EmojiPicker: View {
-    static var isAvailable: Bool {
+public struct EmojiPicker: View {
+    public static var isAvailable: Bool {
         UITextInputMode.activeInputModes.map(\.primaryLanguage).contains("emoji")
     }
     
@@ -40,7 +40,7 @@ struct EmojiPicker: View {
     let options: Options
     var hasNothing: Bool { emoji == nil && genmoji == nil }
     
-    var body: some View {
+    public var body: some View {
         return Group {
             if let Wrapper { Wrapper.opacity(0) }
         }
@@ -56,7 +56,7 @@ struct EmojiPicker: View {
         }
     }
     
-    class Options {
+    public class Options {
         let supportGenmoji: Bool
         let disableInputModeChange: Bool
         var onNonEmoji: ((String) -> Void)

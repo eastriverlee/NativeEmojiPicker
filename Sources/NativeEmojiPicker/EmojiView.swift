@@ -6,7 +6,7 @@
 //
 import SwiftUI
 
-struct EmojiView: View {
+public struct EmojiView: View {
     var emoji: String?
     var genmoji: NSAttributedString?
     
@@ -14,7 +14,7 @@ struct EmojiView: View {
         self.emoji = emoji
         self.genmoji = genmoji
     }
-    var body: some View {
+    public var body: some View {
         Group {
             if let genmoji {
                 Text(AttributedString(genmoji))
